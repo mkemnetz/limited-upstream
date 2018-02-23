@@ -41,7 +41,7 @@ global overallProgressSteps
 multiWaitbar( 'CloseAll' );
 multiWaitbar( 'Overall Progress', 0 , 'Color', 'b');
 
-overallProgressSteps = 2;
+overallProgressSteps = 3;
 
 %% Load Upstream and Downstream Data - 1 delta
 fprintf('\n\n\nLoading in Processed Data...\n');
@@ -54,39 +54,45 @@ dataFile  = 'upstream_downstream_1d.mat';
 dataPath  = [dataDir dataFile];
 variables = {'upstream_downstream_1d'};
 
-lengthyLoad(dataPath, variables);
+% lengthyLoad(dataPath, variables);
 % 
-% load(dataPath, '-mat', variables{:});
+load(dataPath, '-mat', variables{:});
 % stop(t);
 multiWaitbar( 'Loading in Processed Data...', 'Reset');
 multiWaitbar( 'Loading in Processed Data...', 1, 'Color', 'g' );
 multiWaitbar( 'Overall Progress', 'Increment', 1/overallProgressSteps);
 
-%% Compute Global Error - Center strip
-fprintf('Computing Global Error from a center strip...\n');
-multiWaitbar( 'Computing Global Error Directly (All Modes)...', 0, 'Color', 'r' );
+%% Compute Global Error - 1d
+fprintf('Computing Global Error from a 1d separation...\n');
+multiWaitbar( 'Computing Global from a 1d separation...', 0, 'Color', 'r' );
 
-computeGE_centerStrip(upstream_downstream_1d);
+error_1d = computeGE_1d(upstream_downstream_1d, 'plotFlag', 1);
 
-multiWaitbar( 'Computing Global Error Directly (All Modes)...', 1, 'Color', 'g' );
+[~,I] = min(error_1d(2, :));
+convVel = error_1d(1, I);
+
+multiWaitbar( 'Computing Global from a 1d separation...', 1, 'Color', 'g' );
 multiWaitbar( 'Overall Progress', 'Increment', 1/overallProgressSteps );
 
+%% Compute Global Error - Center Strip
+fprintf('Computing Global Error from a 1d center strip...\n');
+multiWaitbar( 'Computing Global from a 1d center strip...', 0, 'Color', 'r' );
 
 
 
-
-
+multiWaitbar( 'Computing Global Error from a 1d center strip...', 1, 'Color', 'g' );
+multiWaitbar( 'Overall Progress', 'Increment', 1/overallProgressSteps );
 %% -------------- END CODE --------------- %% 
 end 
 %% --------- BEGIN SUBFUNCTIONS ---------- %% 
-function lengthyLoadFcn(dataPath, variables)
-    load(dataPath, '-mat', variables{:});
-end
-
-function lengthyLoad(dataP, var)
-    % Start an asynchronous timer to perform the lengthy update
-    start(timer('StartDelay',0.5, 'TimerFcn',@(dataPath, variables)lengthyLoadFcn(dataP, var)));
-end
+% function lengthyLoadFcn(dataPath, variables)
+%     load(dataPath, '-mat', variables{:});
+% end
+% 
+% function lengthyLoad(dataP, var)
+%     % Start an asynchronous timer to perform the lengthy update
+%     start(timer('StartDelay',0.5, 'TimerFcn',@(dataPath, variables)lengthyLoadFcn(dataP, var)));
+% end
 
  
 

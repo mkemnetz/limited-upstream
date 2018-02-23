@@ -1,4 +1,4 @@
-function [error_final] = computeGE_centerStrip(dataStructInput, varargin) 
+function [error_final] = computeGE_1d(dataStructInput, varargin) 
 %COMPUTEGE_CENTERSTRIP - One line description of what the function or script performs (H1 line) 
 %Optional file header info (to give more details about the function than in the H1 line) 
 %Optional file header info (to give more details about the function than in the H1 line) 
@@ -30,11 +30,10 @@ function [error_final] = computeGE_centerStrip(dataStructInput, varargin)
 % Hessert Laboratory for Aerospace Research B034 
 % email: mkemnetz@nd.edu, kemnetz.m@gmail.com 
 % Website: http://www.matthewkemnetz.com 
-% October 2017; Last revision: 18-October-2017 
+% October 2017; Last revision: 11-October-2017 
 % Copyright 2017, Matthew Kemnetz, All rights reserved. 
  
 %% ------------- BEGIN CODE -------------- %% 
- 
 %% Define Global Variables
 global overallProgressSteps
 
@@ -45,13 +44,11 @@ defaultMach      = 0.2;
 defaultTotalTemp = 78.4;
 defaultfsamp     = 40300;
 defaultPlotFlag  = 0;
-defaultConv      = 0.80;
 
 addRequired(p, 'dataStructInput', @isstruct);
 addParameter(p, 'mach', defaultMach, @isnumeric)
 addParameter(p, 'temp_t', defaultTotalTemp, @isnumeric)
 addParameter(p, 'fsamp', defaultfsamp, @isnumeric)
-addParameter(p, 'conv', defaultConv, @isnumeric)
 addParameter(p, 'plotFlag', defaultPlotFlag, @isnumeric)
 
 parse(p,dataStructInput, varargin{:});
@@ -61,20 +58,23 @@ M_inf      = p.Results.mach;
 T_t        = p.Results.temp_t;
 fsamp      = p.Results.fsamp;
 plotFlag   = p.Results.plotFlag;
-convVel    = p.Results.conv;
 
 if ~isempty(p.UsingDefaults)
    disp('Using defaults: ')
    disp(p.UsingDefaults)
 end
 %% Update the waitbar
-t = timer; t.ExecutionMode = 'fixedRate'; t.Period = 0.05; t.TimerFcn = @(~, ~)multiWaitbar( 'Computing Global Error Directly (All Modes)...', 'Busy');
+t = timer; t.ExecutionMode = 'fixedRate'; t.Period = 0.05; t.TimerFcn = @(~, ~)multiWaitbar( 'Computing Global from a 1d separation...', 'Busy');
 start(t);
 %%
 params.N    = 1000;
-params.fine = 200;
+params.fine = 100;
 [ dataZero.x,  dataZero.y,   dataZero.phase ] = refineWF2( dataStruct.zero.phase,  dataStruct.zero.x,  dataStruct.zero.y,  params);
 [ dataOne.x,   dataOne.y,   dataOne.phase   ] = refineWF2( dataStruct.one.phase,   dataStruct.one.x,   dataStruct.one.y,   params);
+
+params.fine = params.N*10;
+[ dataZero.x,  dataZero.y,   dataZero.phase ] = refineWFt(dataZero.phase,  dataZero.x,  dataZero.y,  params);
+[ dataOne.x,  dataOne.y,   dataOne.phase ] = refineWFt(dataOne.phase,  dataOne.x,  dataOne.y,  params);
 
 %%
 phase_L = dataZero.phase;
@@ -92,15 +92,14 @@ OPDrms = mean(OPDrms);
 
 %%  Full Aperture Error
 stop(t);
-multiWaitbar( 'Computing Global Error Directly (All Modes)...', 'Reset');
-delay = round((0.5*0.0156)/(convVel*machToVel(M_inf, T_t)*(1/fsamp)));
+multiWaitbar( 'Computing Global from a 1d separation...', 'Reset');
 
 e2_1         = zeros(2, 100);
-N            = params.N;
-delaysTest   = 100;
+N            = size(dataZero.phase, 3);
+delaysTest   = 1000;
 for i = 1:delaysTest
     if (mod(i, 10) ==0)
-        multiWaitbar( 'Computing Global Error Directly (All Modes)...', i/delaysTest);
+        multiWaitbar( 'Computing Global from a 1d separation...', i/delaysTest);
     end
     delay  = i;
     error1 = zeros(1, N-delay);
@@ -146,20 +145,10 @@ if(plotFlag == 1)
     grid on;
     grid minor;
 end
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+
 %% -------------- END CODE --------------- %% 
 end 
 %% --------- BEGIN SUBFUNCTIONS ---------- %% 
-
 
 
 
